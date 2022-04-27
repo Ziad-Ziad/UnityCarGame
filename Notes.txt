@@ -1,0 +1,2 @@
+-- lab does not increment in carcontrol.cs because of this line of code
+            if (nextCheckpoint == RaceManager.instance.allCheckpoints.Length)   // the instance race manager is static and is invoked in its script and accessed the checkpoints and its length

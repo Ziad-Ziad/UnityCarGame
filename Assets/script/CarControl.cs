@@ -19,19 +19,29 @@ public class CarControl : MonoBehaviour
     float dragOnGround;
     public float gravityMode = 10f;
     public AudioSource engineSound;    // attaching the engine sound
-
+    public int nextCheckpoint;
+    public int currentLap = 1;
+    public float lapTime, bestLapTime;
 
     // Start is called before the first frame update
     void Start()
     {
         RB.transform.parent = null;
         dragOnGround = RB.drag;
+        UIControl.instance.lapCounterText.text = currentLap + "/" + RaceManager.instance.totalLaps;     // Modifying the value of lap counter indicator
+
     }
 
     private void Update()
     {
+        lapTime += Time.deltaTime;  // increment the time by the previous one
+        var timespan = System.TimeSpan.FromSeconds(lapTime);
+
+        //declarng the format of the best lap time and assigning it 
+        UIControl.instance.currentLapText.text = string.Format("{0:00}m{1:00}.{2:000}s", timespan.Minutes, timespan.Seconds, timespan.Milliseconds);
+
         engineSound.pitch = 1f + (RB.velocity.magnitude / maxSpeed) * 2f;       // Increasing the pitch when the velociy increases to make it more realistic
-        print(engineSound.pitch);
+        // print(engineSound.pitch);
     }
     // Update is called once per frame
     void FixedUpdate()
@@ -94,6 +104,45 @@ public class CarControl : MonoBehaviour
         {
             RB.velocity = RB.velocity.normalized * maxSpeed; // 0...55 -> (0...1) * MAXSpeed -> 0...30 limited for the speed cars
         }
+
+    }
+
+
+    // Returning the checkpoint index that was hitted by the car
+    public void CheckpointHit(int checkpointNum)
+    {
+        // print(checkpointNum);
+        if (checkpointNum == nextCheckpoint)
+        {
+            nextCheckpoint++;       // if the current checkpoint is equal to the previous checkpoint so the var nextcheckpoint will be increamented by one
+
+            // reseting the checkpoint var when a complete lap is done
+            if (nextCheckpoint == RaceManager.instance.allCheckpoints.Length)   // the instance race manager is static and is invoked in its script and accessed the checkpoints and its length
+            {
+               //  print("works");
+                nextCheckpoint = 0;
+                LapCompleted();
+            }
+        }
+    }
+
+    public void LapCompleted()
+    {
+        currentLap++;
+
+
+        // if the current lap time is less than the bestlap time sp the current one when we start the game the lap time will be the bestlaptime
+        if (lapTime < bestLapTime || bestLapTime == 0) // || - or, && - and
+        {
+            bestLapTime = lapTime;
+        }
+        lapTime = 0f;
+
+        var timespan = System.TimeSpan.FromSeconds(bestLapTime);
+        UIControl.instance.bestLapTimeText.text = string.Format("{0:00}m{1:00}.{2:000}s", timespan.Minutes, timespan.Seconds, timespan.Milliseconds);
+
+        UIControl.instance.lapCounterText.text = currentLap + "/" + RaceManager.instance.totalLaps;     // Modifying the value of lap counter indicator
+
 
     }
 }
