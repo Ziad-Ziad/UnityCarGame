@@ -7,7 +7,7 @@ public class UIControl : MonoBehaviour
 {
     
     public static UIControl instance;       // accessing the static memebers of the object
-    public TMP_Text currentLapText, bestLapTimeText, lapCounterText; // text variables
+    public TMP_Text currentLapText, bestLapTimeText, lapCounterText, positionText, countDownText, goText; // text variables
 
     private void Awake()
     {

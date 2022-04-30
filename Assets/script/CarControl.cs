@@ -55,133 +55,149 @@ public class CarControl : MonoBehaviour
 
     private void Update()
     {
-        lapTime += Time.deltaTime;  // increment the time by the previous one
 
-        // display the ui only for the player's car
-        if (!isAI)
+        if (!RaceManager.instance.isStarting)
         {
-            var timespan = System.TimeSpan.FromSeconds(lapTime);
 
-            //declarng the format of the best lap time and assigning it 
-            UIControl.instance.currentLapText.text = string.Format("{0:00}m{1:00}.{2:000}s", timespan.Minutes, timespan.Seconds, timespan.Milliseconds);
+            lapTime += Time.deltaTime;  // increment the time by the previous one
+
+            // display the ui only for the player's car
+            if (!isAI)
+            {
+                var timespan = System.TimeSpan.FromSeconds(lapTime);
+
+                //declarng the format of the best lap time and assigning it 
+                UIControl.instance.currentLapText.text = string.Format("{0:00}m{1:00}.{2:000}s", timespan.Minutes, timespan.Seconds, timespan.Milliseconds);
+
+                if (Input.GetKeyDown(KeyCode.R))
+                {
+                    // move the car to the track when the R button is clicked
+                    ResetToTrack();
+                }
+            }
+
+
+            engineSound.pitch = 1f + (RB.velocity.magnitude / maxSpeed) * 2f;       // Increasing the pitch when the velociy increases to make it more realistic
+                                                                                    // print(engineSound.pitch);
         }
-
-        engineSound.pitch = 1f + (RB.velocity.magnitude / maxSpeed) * 2f;       // Increasing the pitch when the velociy increases to make it more realistic
-        // print(engineSound.pitch);
     }
     // Update is called once per frame
     void FixedUpdate()
     {
-        grounded = false;
-        RaycastHit hit;     // Detecting the distance
-
-        Vector3 normalTarget = Vector3.zero;    // basic orienation of the car
-
-        // Detecting whenever the car touches the ground
-        if (Physics.Raycast(groundRayPoint.position, -transform.up, out hit, groundRayLength, whatIsGround))
-        {                   
-            grounded = true;            // when the car hits the ground the grounded var will be true
-            normalTarget = hit.normal;
-        }
-
-
-        // prevent the player from controlling the ai cars
-        if (!isAI)
+        if (!RaceManager.instance.isStarting)
         {
-            speedInput = 0f;
-            if (Input.GetAxis("Vertical") > 0)
+
+            grounded = false;
+            RaycastHit hit;     // Detecting the distance
+
+            Vector3 normalTarget = Vector3.zero;    // basic orienation of the car
+
+            // Detecting whenever the car touches the ground
+            if (Physics.Raycast(groundRayPoint.position, -transform.up, out hit, groundRayLength, whatIsGround))
             {
-                speedInput = Input.GetAxis("Vertical") * forwardAccel;
-            }
-            if (Input.GetAxis("Vertical") < 0)
-            {
-                speedInput = Input.GetAxis("Vertical") * reverseAccel;
+                grounded = true;            // when the car hits the ground the grounded var will be true
+                normalTarget = hit.normal;
             }
 
-            turnInput = Input.GetAxis("Horizontal");
 
-
-        }
-        else
-        {
-            targetPoint.y = transform.position.y;   // moving the ai cars in the y axis
-
-            // comparing the distance between the ai cars  and the target point, if it is smaller then the condition is true
-            if (Vector3.Distance(transform.position, targetPoint) < aiReachPointRange)
+            // prevent the player from controlling the ai cars
+            if (!isAI)
             {
-                currentTarget++;        // increment our current target by one
-
-                // when the ai car complete a lap, reset the checkpoints to 0
-                if (currentTarget >= RaceManager.instance.allCheckpoints.Length)
+                speedInput = 0f;
+                if (Input.GetAxis("Vertical") > 0)
                 {
-                    currentTarget = 0;
+                    speedInput = Input.GetAxis("Vertical") * forwardAccel;
+                }
+                if (Input.GetAxis("Vertical") < 0)
+                {
+                    speedInput = Input.GetAxis("Vertical") * reverseAccel;
                 }
 
-                //adding diversity to the ai cars
-                targetPoint = RaceManager.instance.allCheckpoints[currentTarget].transform.position;
-                RandimiseAllTarget();
-            }
+                turnInput = Input.GetAxis("Horizontal");
 
-            Vector3 targetDir = targetPoint - transform.position;       // the distance between the ar and the target
-            float angle = Vector3.Angle(targetDir, transform.forward);  // Storing the angle between the car and the checkpoint(target) in the angle var
-            Vector3 localPos = transform.InverseTransformPoint(targetPoint);    // Obtaining sign of the angle:
-            if (localPos.x < 0f)
-            {
-                angle = -angle;     // if the position is less than 0 so the angle is negative
-            }
 
-            turnInput = Mathf.Clamp(angle / aiMaxTurn, -1f, 1f);
-
-            if (Mathf.Abs(angle) < aiMaxTurn)
-            {
-                // when the car moves on straight line 
-                aiSpeedInput = Mathf.MoveTowards(aiSpeedInput, 1f, aiAccelerateSpeed);
             }
             else
             {
-                // how fast to accelerate the car on turning
-                aiSpeedInput = Mathf.MoveTowards(aiSpeedInput, aiTurnSpeed, aiAccelerateSpeed);
+                targetPoint.y = transform.position.y;   // moving the ai cars in the y axis
+
+                // comparing the distance between the ai cars  and the target point, if it is smaller then the condition is true
+                if (Vector3.Distance(transform.position, targetPoint) < aiReachPointRange)
+                {
+                    currentTarget++;        // increment our current target by one
+
+                    // when the ai car complete a lap, reset the checkpoints to 0
+                    if (currentTarget >= RaceManager.instance.allCheckpoints.Length)
+                    {
+                        currentTarget = 0;
+                    }
+
+                    //adding diversity to the ai cars
+                    targetPoint = RaceManager.instance.allCheckpoints[currentTarget].transform.position;
+                    RandimiseAllTarget();
+                }
+
+                Vector3 targetDir = targetPoint - transform.position;       // the distance between the ar and the target
+                float angle = Vector3.Angle(targetDir, transform.forward);  // Storing the angle between the car and the checkpoint(target) in the angle var
+                Vector3 localPos = transform.InverseTransformPoint(targetPoint);    // Obtaining sign of the angle:
+                if (localPos.x < 0f)
+                {
+                    angle = -angle;     // if the position is less than 0 so the angle is negative
+                }
+
+                turnInput = Mathf.Clamp(angle / aiMaxTurn, -1f, 1f);
+
+                if (Mathf.Abs(angle) < aiMaxTurn)
+                {
+                    // when the car moves on straight line 
+                    aiSpeedInput = Mathf.MoveTowards(aiSpeedInput, 1f, aiAccelerateSpeed);
+                }
+                else
+                {
+                    // how fast to accelerate the car on turning
+                    aiSpeedInput = Mathf.MoveTowards(aiSpeedInput, aiTurnSpeed, aiAccelerateSpeed);
+                }
+                speedInput = aiSpeedInput * forwardAccel * aiSpeedMod;
+
+
             }
-            speedInput = aiSpeedInput * forwardAccel * aiSpeedMod;
+
+            // rotate the car only on the ground layer
+            if (grounded && speedInput != 0)
+            {
+                transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles + new Vector3(0, turnInput * turnStrength * Time.deltaTime * Mathf.Sign(speedInput) * (RB.velocity.magnitude / maxSpeed), 0));
+            }
 
 
-        }
+            leftfrontWheel.localRotation = Quaternion.Euler(leftfrontWheel.localRotation.eulerAngles.x, (turnInput * maxWheeltuen), leftfrontWheel.localRotation.eulerAngles.z);
+            rightfrontWheel.localRotation = Quaternion.Euler(rightfrontWheel.localRotation.eulerAngles.x, (turnInput * maxWheeltuen), rightfrontWheel.localRotation.eulerAngles.z);
 
-        // rotate the car only on the ground layer
-        if (grounded && speedInput != 0)
-        {
-            transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles + new Vector3(0, turnInput * turnStrength * Time.deltaTime * Mathf.Sign(speedInput) * (RB.velocity.magnitude / maxSpeed), 0));
-        }
+            // rotate the car to match the normal
+            if (grounded)
+            {
+                transform.rotation = Quaternion.FromToRotation(transform.up, normalTarget) * transform.rotation; // Allign the car along the slopped plane 
 
+            }
 
-        leftfrontWheel.localRotation = Quaternion.Euler(leftfrontWheel.localRotation.eulerAngles.x, (turnInput * maxWheeltuen), leftfrontWheel.localRotation.eulerAngles.z);
-        rightfrontWheel.localRotation = Quaternion.Euler(rightfrontWheel.localRotation.eulerAngles.x, (turnInput * maxWheeltuen), rightfrontWheel.localRotation.eulerAngles.z);
+            // accelerate the car only on the ground layer
+            if (grounded)
+            {
+                RB.AddForce(transform.forward * speedInput * 10000f);
+                RB.drag = dragOnGround;
+            }
+            else
+            {
+                RB.drag = 0.1f;     // decreasing the drag value when the car is on the air to make it move 
+                RB.AddForce(-Vector3.up * gravityMode * 100f); //increasing the gravity to pull the car to the ground faser to make it more realistic
+            }
+            transform.position = RB.position;
 
-        // rotate the car to match the normal
-        if (grounded)
-        {
-            transform.rotation = Quaternion.FromToRotation(transform.up, normalTarget) * transform.rotation; // Allign the car along the slopped plane 
+            // print(RB.velocity.magnitude);
 
-        }
-
-        // accelerate the car only on the ground layer
-        if (grounded)
-        {
-            RB.AddForce(transform.forward * speedInput * 10000f);
-            RB.drag = dragOnGround;
-        }
-        else
-        {   
-            RB.drag = 0.1f;     // decreasing the drag value when the car is on the air to make it move 
-            RB.AddForce(-Vector3.up * gravityMode * 100f); //increasing the gravity to pull the car to the ground faser to make it more realistic
-        }
-        transform.position = RB.position;
-
-        // print(RB.velocity.magnitude);
-
-        if (RB.velocity.magnitude > maxSpeed)
-        {
-            RB.velocity = RB.velocity.normalized * maxSpeed; // 0...55 -> (0...1) * MAXSpeed -> 0...30 limited for the speed cars
+            if (RB.velocity.magnitude > maxSpeed)
+            {
+                RB.velocity = RB.velocity.normalized * maxSpeed; // 0...55 -> (0...1) * MAXSpeed -> 0...30 limited for the speed cars
+            }
         }
 
     }
@@ -233,5 +249,22 @@ public class CarControl : MonoBehaviour
     public void RandimiseAllTarget()
     {
         targetPoint += new Vector3(Random.Range(-aiPointVariance, aiPointVariance), 0f, Random.Range(-aiPointVariance, aiPointVariance));
+    }
+
+    void ResetToTrack()
+    {
+        int pointToGoTo = nextCheckpoint - 1;       // substract one from this checkpoint to move to the previous one
+        if (pointToGoTo < 0)
+        {
+            // if this is the first checkpoint, substract one from the length of the checkpoint array and store it in the pointtogo var
+            pointToGoTo = RaceManager.instance.allCheckpoints.Length - 1;
+        }
+        transform.position = RaceManager.instance.allCheckpoints[pointToGoTo].transform.position;         // store that position to the tranform.position var
+        RB.transform.position = transform.position;                                                       // move the sphere to that position 
+
+        RB.velocity = Vector3.zero;     // reset the speed of the sphere and the car to 0
+        speedInput = 0;     // reset the speed to 0
+        turnInput = 0;      // reset the turning to 0
+        grounded = true;
     }
 }
