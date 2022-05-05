@@ -219,6 +219,21 @@ public class CarControl : MonoBehaviour
                 LapCompleted();
             }
         }
+
+        // prevent the ai cars from spining and to hit the center of the checkpoint  and then move to the ne
+        if (isAI)
+        {
+            if (checkpointNum == currentTarget)
+            {
+                currentTarget++;
+                if (currentTarget >= RaceManager.instance.allCheckpoints.Length)
+                {
+                    currentTarget = 0;
+                }
+                targetPoint = RaceManager.instance.allCheckpoints[currentTarget].transform.position;
+                RandimiseAllTarget();
+            }
+        }
     }
 
     public void LapCompleted()
@@ -231,17 +246,39 @@ public class CarControl : MonoBehaviour
         {
             bestLapTime = lapTime;
         }
-        lapTime = 0f;
 
-        // display the ui only for the player's car
-        if (!isAI)
+
+
+        if (currentLap <= RaceManager.instance.totalLaps)   // if the race is not finished play the game normally
         {
-            var timespan = System.TimeSpan.FromSeconds(bestLapTime);
-            UIControl.instance.bestLapTimeText.text = string.Format("{0:00}m{1:00}.{2:000}s", timespan.Minutes, timespan.Seconds, timespan.Milliseconds);
+            lapTime = 0f;
 
-            UIControl.instance.lapCounterText.text = currentLap + "/" + RaceManager.instance.totalLaps;     // Modifying the value of lap counter indicator
+            // display the ui only for the player's car
+            if (!isAI)
+            {
+                var timespan = System.TimeSpan.FromSeconds(bestLapTime);
+                UIControl.instance.bestLapTimeText.text = string.Format("{0:00}m{1:00}.{2:000}s", timespan.Minutes, timespan.Seconds, timespan.Milliseconds);
+
+                UIControl.instance.lapCounterText.text = currentLap + "/" + RaceManager.instance.totalLaps;     // Modifying the value of lap counter indicator
+            }
         }
+        else
+        {   // if the race is finsihed, run the block of code
             
+            if (!isAI)
+            {
+                isAI = true;        // make the player's car an ai car so that the playler cant control it anymore
+                aiSpeedMod = 1;     // constant speed to the player's car
+                targetPoint = RaceManager.instance.allCheckpoints[currentTarget].transform.position;
+                RandimiseAllTarget();   // invoking the radnimise function to make the cars move randomly (in different speed...)
+                var timespan = System.TimeSpan.FromSeconds(bestLapTime);
+                // displaying the best time on the user interface
+                UIControl.instance.bestLapTimeText.text = string.Format("{0:00}m{1:00}.{2:000}s", timespan.Minutes, timespan.Seconds, timespan.Milliseconds);
+
+                RaceManager.instance.FinishRace();      // invoking the finsihace function from the race manager script
+            }
+        }
+
 
     }
 

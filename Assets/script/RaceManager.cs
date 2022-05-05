@@ -20,7 +20,8 @@ public class RaceManager : MonoBehaviour
     public float timeBetweenStartCount = 1f;// counter's step
     float startCounter;              
     public int countdownCurrent = 3;       // how many seconds to count
-
+    public bool raceCompleted;             // bool value to store if the race is finished or not
+            
 
 
 
@@ -126,4 +127,27 @@ public class RaceManager : MonoBehaviour
         }
 
     }
+
+    public void FinishRace()
+    {
+        raceCompleted = true;       // once the race is completed, chenge the value of this bool to True
+
+        switch (playerPosition)     // creating statements for different positions of the player's car at the end of the race using switch case
+        {
+            case 1:
+                UIControl.instance.raceResultText.text = "You finished 1st";    // If the player finished at the first place so display this case in the ui
+                break;
+            case 2:
+                UIControl.instance.raceResultText.text = "You finished 2nd";    // If the player finished at the second place so display this case in the ui
+                break;
+            case 3:
+                UIControl.instance.raceResultText.text = "You finished 3rd";    // If the player finished at the first place so display this case in the ui
+                break;
+            default:
+                UIControl.instance.raceResultText.text = "You finished" + playerPosition + "th";// if the player's psoition is more than third  so display his position + th in the ui
+                break;
+        }
+            
+        UIControl.instance.resultScreen.SetActive(true);    // activate the resultscreen panel from the ui control script
+    } 
 }
